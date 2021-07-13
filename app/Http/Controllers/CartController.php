@@ -11,12 +11,12 @@ use Exception;
 
 class CartController extends Controller
 {
-    private $vuelo_uri = 'http://localhost:3000/api/vuelos/';
-    private $vuelo_order_uri = 'http://localhost:3000/api/vuelos/orders/';
-    private $coche_uri = 'http://localhost:3001/api/coches/';
-    private $coche_order_uri = 'http://localhost:3001/api/coches/orders/';
-    private $hotel_uri = 'http://localhost:3002/api/hoteles/';
-    private $hotel_order_uri = 'http://localhost:3002/api/hoteles/orders/';
+    private $vuelo_uri = 'http://192.168.1.9:3000/api/vuelos/';
+    private $vuelo_order_uri = 'http://192.168.1.9:3000/api/vuelos/orders/';
+    private $coche_uri = 'http://192.168.1.9:3001/api/coches/';
+    private $coche_order_uri = 'http://192.168.1.9:3001/api/coches/orders/';
+    private $hotel_uri = 'http://192.168.1.9:3002/api/hoteles/';
+    private $hotel_order_uri = 'http://192.168.1.9:3002/api/hoteles/orders/';
 
     private $safe_vuelo_uri = 'https://localhost:3000/api/vuelos/';
     private $safe_vuelo_order_uri = 'https://localhost:3000/api/vuelos/orders/';
@@ -78,8 +78,8 @@ class CartController extends Controller
         $pedidos_realizados = [];
         $num_productos = 0;
         foreach (Cart::content() as $row) {
-            $post_id = '' . $order_id . $num_productos;
-            // try {
+            $post_id = '' . $order_id . '-' . $num_productos;
+            try {
                 if ($row->options->type === 'vuelo') {
                     $antiguo_stock = $this->postVuelo($row, $order_id, $post_id);
                     $pedidos_realizados[] = [
@@ -108,21 +108,21 @@ class CartController extends Controller
                         'antiguo_stock' => $antiguo_stock
                     ];
                 }
-            // } catch (Exception $ex) {
-            //     DB::rollBack();
-            //     $this->deleteInvalidOrders($pedidos_realizados);
-            //     return redirect()->route('cart.error')
-            //         ->with('message', 'Lo sentimos, el producto ' . $row->name . ' no se encuentra disponible.');
-            // }
+            } catch (Exception $ex) {
+                DB::rollBack();
+                $this->deleteInvalidOrders($pedidos_realizados);
+                return redirect()->route('cart.error',['email' => $request->email, 'cost' => Cart::total()])
+                    ->with('message', 'Lo sentimos, el producto ' . $row->name . ' no se encuentra disponible.');
+            }
             $num_productos++;
         }
         DB::commit();
         return redirect()->route('home')->with('success', 'Pedido realizado con exito');
     }
 
-    public function error()
+    public function error($email,$cost)
     {
-        return view('cart.error')->with('error', 'error');
+        return view('cart.error')->with('error', 'error')->with('email',$email)->with('cost',$cost);
     }
 
     public function postVuelo($row, $order_id, $post_id)
@@ -146,7 +146,8 @@ class CartController extends Controller
             'vuelo_id' => $vuelo_id,
             'cantidad' => $row->qty,
             'precio' => $row->price * 100,
-            'fecha_inicio_contratada' => Carbon::createFromFormat('d/m/Y', $vuelo['fecha'])
+            'fecha_inicio_contratada' => Carbon::createFromFormat('d/m/Y', $vuelo['fecha']),
+            'server_id' => $vuelo['server_id']
         ]);
         $new_qty = $vuelo['stock'] - $row->qty;
         Http::put($this->vuelo_uri . 'modificaStock/'.$row->id.'/'.$new_qty,[]);
@@ -157,6 +158,7 @@ class CartController extends Controller
     {
         Http::post($this->vuelo_order_uri.'postVueloOrder', [
             '_id' => $post_id,
+            'agencia_id' => '1111',
             'vuelo_id' => $vuelo['_id'],
             'usuario_email' => auth()->user()->email,
             'precio' => $row->price,
@@ -185,7 +187,8 @@ class CartController extends Controller
             'coche_id' => $coche_id,
             'cantidad' => $row->qty,
             'precio' => $row->price * 100,
-            'fecha_inicio_contratada' => $row->options->fecha_inicio
+            'fecha_inicio_contratada' => $row->options->fecha_inicio,
+            'server_id' => $coche['server_id']
         ]);
         $new_qty = $coche['stock'] - $row->qty;
         Http::put($this->coche_uri . 'modificaStock/'.$row->id.'/'.$new_qty,[]);
@@ -196,6 +199,7 @@ class CartController extends Controller
     {
         Http::post($this->coche_order_uri.'postCocheOrder', [
             '_id' => $post_id,
+            'agencia_id' => '1111',
             'coche_id' => $coche['_id'],
             'usuario_email' => auth()->user()->email,
             'precio' => $row->price,
@@ -226,7 +230,8 @@ class CartController extends Controller
             'hotel_id' => $hotel_id,
             'cantidad' => $row->qty,
             'precio' => $row->price * 100,
-            'fecha_inicio_contratada' => $row->options->fecha_inicio
+            'fecha_inicio_contratada' => $row->options->fecha_inicio,
+            'server_id' => $hotel['server_id']
         ]);
         $new_qty = $hotel['stock'] - $row->qty;
         Http::put($this->hotel_uri . 'modificaStock/'.$row->id.'/'.$new_qty,[]);
@@ -237,6 +242,7 @@ class CartController extends Controller
     {
         Http::post($this->hotel_order_uri.'postHotelOrder', [
             '_id' => $post_id,
+            'agencia_id' => '1111',
             'hotel_id' => $hotel['_id'],
             'usuario_email' => auth()->user()->email,
             'precio' => $row->price,
@@ -260,6 +266,21 @@ class CartController extends Controller
                 Http::delete($this->hotel_order_uri.'deleteById/'.$pedido['id']);
             }
         }
-
     }
+
+    public function paymentError()
+    {
+        return redirect()->route('cart.showPaymentError')->with('message','Sus credenciales fueron erroneas ');
+    }
+
+    public function showPaymentError()
+    {
+        return view('cart.paymentError');
+    }
+
+    public function noCredit()
+    {
+        return redirect()->route('cart.showPaymentError')->with('message','No dispone de credito suficiente ');
+    }
+
 }

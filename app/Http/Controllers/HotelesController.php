@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 class HotelesController extends Controller
 {
 
-    private $uri = 'http://localhost:3002/api/hoteles/';
+    private $uri = 'http://192.168.1.9:3002/api/hoteles/';
     private $safe_uri = 'https://localhost:3002/api/hoteles/';
     /**
      * Display a listing of the resource.
@@ -76,6 +76,7 @@ class HotelesController extends Controller
                 'capacidad_personas' => $hotel['capacidad_personas'],
                 'tipo_habitacion' => $hotel['tipo_habitacion'],
                 'fecha_inicio' => $fecha_inicio,
+                'server_id' => $hotel['server_id']
             ]
         );
 

@@ -11,7 +11,7 @@ use Gloudemans\Shoppingcart\Facades\Cart;
 
 class CochesController extends Controller
 {
-    private $uri = 'http://localhost:3001/api/coches/';
+    private $uri = 'http://192.168.1.9:3001/api/coches/';
     private $safe_uri = 'https://localhost:3001/api/coches/';
 
     /**
@@ -73,6 +73,7 @@ class CochesController extends Controller
                 'plazas' => $coche['plazas'],
                 'disponible' => $coche['disponible'],
                 'fecha_inicio' => $fecha_inicio,
+                'server_id' => $coche['server_id']
             ]
         );
 

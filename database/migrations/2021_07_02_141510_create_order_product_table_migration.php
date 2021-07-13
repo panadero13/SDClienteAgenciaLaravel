@@ -22,6 +22,7 @@ class CreateOrderProductTableMigration extends Migration
             $table->integer('cantidad');
             $table->integer('precio');
             $table->date('fecha_inicio_contratada');
+            $table->string('server_id');
             $table->timestamps();
         });
     }

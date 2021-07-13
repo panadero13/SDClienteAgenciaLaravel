@@ -10,7 +10,7 @@ use Gloudemans\Shoppingcart\Facades\Cart;
 
 class VuelosController extends Controller
 {
-    private $uri = 'http://localhost:3000/api/vuelos/';
+    private $uri = 'http://192.168.1.9:3000/api/vuelos/';
     private $safe_uri = 'https://localhost:3000/api/vuelos/';
 
     /**
@@ -63,7 +63,8 @@ class VuelosController extends Controller
             [
                 'type' => 'vuelo',
                 'fecha' => $vuelo['fecha'],
-                'hora' => $vuelo['hora']
+                'hora' => $vuelo['hora'],
+                'server_id' => $vuelo['server_id']
             ]
         );
 
